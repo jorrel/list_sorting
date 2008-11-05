@@ -17,6 +17,11 @@
   #View
   <!--               label   column   this is the default sort    -->
   <th><%= sort_link('Login', 'login', :default => true) %></th>
+
+  <!-- this works -->
+  <th><%= sort_link('Name', 'last_name, first_name, middle_name') %></th>
+
+  <!-- default sorting for this column is descending -->
   <th><%= sort_link('Last Changed', 'updated_at DESC') %></th>
 
 
