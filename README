@@ -10,7 +10,9 @@
   #Controller
   class UsersController < ApplicationController
     def index
-      @users = paginate :users, :order => 'login'   # default ordering
+      @users = paginate :users, :order => 'login'
+      # or
+      @users = paginate @group.users, :order => 'login'
     end
   end
 
