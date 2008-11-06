@@ -27,4 +27,8 @@
   <th><%= sort_link('Last Changed', 'updated_at DESC') %></th>
 
 
+== Installation
+  ./script/plugin install git://github.com/jorrel/list_sorting.git
+
+
 Copyright (c) 2008 Jorrel Ang, released under the MIT license
