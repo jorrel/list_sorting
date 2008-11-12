@@ -17,10 +17,21 @@
     end
 
 ## View
+Basic example:
     <th><%= sort_link('Login', 'login') %></th>
+outputs
+    <th><a href="/users?sort=login">Login</a></th>
 
-    <!-- this works -->
+Multiple fields:
     <th><%= sort_link('Name', 'last_name, first_name, middle_name') %></th>
+outputs
+    <th><a href="/users?sort=last_name%2C+first_name%2C+middle_name">Name</a></th>
+
+If the :default option is given, and the params contains no sort info
+(meaning this current list is sorted by the default order)
+    <th><%= sort_link('ID', 'id', :default => true) %></th>
+then the link will be for the inverse order
+    <th><a href="/users?sort=id+DESC">ID</a></th>
 
 
 Copyright (c) 2008 Jorrel Ang, released under the MIT license

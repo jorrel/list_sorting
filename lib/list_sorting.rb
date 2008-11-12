@@ -49,6 +49,10 @@ module ListSorting
     #    if currently selected:
     #    # <a href="/users?sort=country+DESC" class="current-sort asc">Country</a>
     #
+    #  sort_link('Username', 'username', :default => true)
+    #    if no sorting in params, the link will be for the reverse order
+    #    # <a href="/users?sort=username+DESC">Username</a>
+    #
     #  sort_link('Last Updated', 'updated_at DESC')
     #    # <a href="/users?sort=updated_at+DESC">Last Updated</a>
     #    if currently selected:
@@ -58,6 +62,7 @@ module ListSorting
     #    # <a href="/users?sort=last_name,+first_name">Name</a>
     #
     def sort_link(label, field, options = {})
+      default = options.delete(:default)
       base = Proc.new { |f| f.sub(/\s*(ASC|DESC)$/,'') }
       current =
         if params[:sort].blank?
@@ -71,6 +76,8 @@ module ListSorting
 
       if current
         field = ActiveRecord::Base.__send__(:reverse_sql_order, params[:sort]).gsub(/\sASC$/i, '')
+      elsif params[:sort].blank? and default
+        field = ActiveRecord::Base.__send__(:reverse_sql_order, field).gsub(/\sASC$/i, '')
       end
 
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
