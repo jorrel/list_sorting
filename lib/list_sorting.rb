@@ -1,3 +1,5 @@
+require 'enumerator'
+
 module ListSorting
   module Controller
     #
@@ -17,7 +19,7 @@ module ListSorting
     def paginate(model, options = {})
       if String === model or Symbol === model # user gave the model name
         model = model.to_s.classify.constantize
-      end	
+      end
       options = options.reverse_merge(:page => params[:page] || 1)
       options[:order] = params[:sort] unless params[:sort].blank?
       model.paginate options
@@ -47,19 +49,30 @@ module ListSorting
     #    if currently selected:
     #    # <a href="/users?sort=country+DESC" class="current-sort asc">Country</a>
     #
-    #  sort_link('Login', 'login', :default => true)
-    #    # <a href="/users?sort=login+DESC">Login</a>
+    #  sort_link('Last Updated', 'updated_at DESC')
+    #    # <a href="/users?sort=updated_at+DESC">Last Updated</a>
     #    if currently selected:
-    #    # <a href="/users?sort=login" class="current-sort desc">Login</a>
+    #    # <a href="/users?sort=updated_at" class="current-sort desc">Last Updated</a>
     #
     #  sort_link('Name', 'last_name, first_name')
     #    # <a href="/users?sort=last_name,+first_name">Name</a>
     #
     def sort_link(label, field, options = {})
-      default = options.delete(:default) || false
-      if (current = (params[:sort] =~ /^#{field}(\s(ASC|DESC))?$/i)) or (params[:sort].blank? and default)
-        field = ActiveRecord::Base.__send__(:reverse_sql_order, field).gsub(/\sASC$/i, '')
+      base = Proc.new { |f| f.sub(/\s*(ASC|DESC)$/,'') }
+      current =
+        if params[:sort].blank?
+          false
+        elsif field =~ /,/
+          fields, sorting = field.split(/\s*,\s*/), params[:sort].split(/\s*,\s*/)
+          fields.size == sorting.size and fields.enum_for(:each_with_index).all? { |f, i| sorting[i] =~ /^#{base.call(f)}(\s(ASC|DESC))?$/i }
+        else
+          params[:sort] =~ /^#{base.call(field)}(\s(ASC|DESC))?$/i
+        end
+
+      if current
+        field = ActiveRecord::Base.__send__(:reverse_sql_order, params[:sort]).gsub(/\sASC$/i, '')
       end
+
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
       link_to label, url_for(:sort => field), options
     end
