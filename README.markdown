@@ -45,6 +45,13 @@ then the link will be for the inverse order
 
     <th><a href="/users?sort=id+DESC">ID</a></th>
 
+### Encoded parameter
+
+By default the sort parameter is plain; but if parameter encoding is desired, it
+can be set by setting 'encoded' to true anywhere in your code (probably in environment.rb)
+
+    ListSorting.encoded = true
+
 
 ---
 

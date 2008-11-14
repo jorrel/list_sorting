@@ -1,6 +1,35 @@
 require 'enumerator'
+require 'base64'
 
 module ListSorting
+  #
+  # ListSorting.encoded
+  #
+  # if set to true, encodes the sorting parameter
+  #
+  mattr_accessor :encoded
+  self.encoded = false
+
+  #
+  # ListSorting.encoding_proc
+  #
+  # what is used for encoding the sorting parameter if
+  # ListSorting.encoded is set to true
+  #
+  mattr_accessor :encoding_proc
+  self.encoding_proc = Proc.new { |s|
+    s += ' ' until (s.size % 3).zero? # avoid '='s at the end
+    Base64.encode64(s).chomp
+  }
+
+  #
+  # ListSorting.decoding_proc
+  #
+  # what decodes the sorting parameter (reverse of ListSorting.encoding_proc)
+  #
+  mattr_accessor :decoding_proc
+  self.decoding_proc = Proc.new { |s| Base64.decode64(s).strip }
+
   module Controller
     #
     # Paginate the model
@@ -20,8 +49,13 @@ module ListSorting
       if String === model or Symbol === model # user gave the model name
         model = model.to_s.classify.constantize
       end
+
       options = options.reverse_merge(:page => params[:page] || 1)
-      options[:order] = params[:sort] unless params[:sort].blank?
+
+      unless (sort = params[:sort]).blank?
+        options[:order] = ListSorting.decode(sort)
+      end
+
       model.paginate options
     end
   end
@@ -63,25 +97,39 @@ module ListSorting
     #
     def sort_link(label, field, options = {})
       default = options.delete(:default)
+      sort = params[:sort] ? ListSorting.decode(params[:sort]) : nil
       base = Proc.new { |f| f.sub(/\s*(ASC|DESC)$/,'') }
       current =
-        if params[:sort].blank?
+        if sort.blank?
           false
         elsif field =~ /,/
-          fields, sorting = field.split(/\s*,\s*/), params[:sort].split(/\s*,\s*/)
+          fields, sorting = field.split(/\s*,\s*/), sort.split(/\s*,\s*/)
           fields.size == sorting.size and fields.enum_for(:each_with_index).all? { |f, i| sorting[i] =~ /^#{base.call(f)}(\s(ASC|DESC))?$/i }
         else
-          params[:sort] =~ /^#{base.call(field)}(\s(ASC|DESC))?$/i
+          sort =~ /^#{base.call(field)}(\s(ASC|DESC))?$/i
         end
 
       if current
-        field = ActiveRecord::Base.__send__(:reverse_sql_order, params[:sort]).gsub(/\sASC$/i, '')
-      elsif params[:sort].blank? and default
+        field = ActiveRecord::Base.__send__(:reverse_sql_order, sort).gsub(/\sASC$/i, '')
+      elsif sort.blank? and default
         field = ActiveRecord::Base.__send__(:reverse_sql_order, field).gsub(/\sASC$/i, '')
       end
 
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
+      field = ListSorting.encode(field)
       link_to label, url_for(:sort => field), options
+    end
+  end
+
+  class << self
+    alias :encoded? :encoded
+
+    def encode(str)
+      encoded? ? encoding_proc.call(str) : str
+    end
+
+    def decode(str)
+      encoded? ? decoding_proc.call(str) : str
     end
   end
 end
