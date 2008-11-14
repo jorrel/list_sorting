@@ -45,12 +45,27 @@ then the link will be for the inverse order
 
     <th><a href="/users?sort=id+DESC">ID</a></th>
 
-### Encoded parameter
+## Encoded Parameter
 
 By default the sort parameter is plain; but if parameter encoding is desired, it
 can be set by setting 'encoded' to true anywhere in your code (probably in environment.rb)
 
     ListSorting.encoded = true
+
+### Changing the encoding script
+
+If you want to implement your own encoding script (by default Base64 is used),
+just replace these two variables with your own procs.
+
+    ListSorting.encoding_proc = Proc.new { |string| SecretLibrary.encode(string) }
+    ListSorting.decoding_proc = Proc.new { |string| SecretLibrary.decode(string) }
+
+## Sort Parameter
+
+ListSorting uses :sort as the default key in paramsm it can be changed as follows.
+
+    ListSorting.sort_parameter = :s
+    # example url: 'users?s=bG9naW4g
 
 
 ---

@@ -30,6 +30,16 @@ module ListSorting
   mattr_accessor :decoding_proc
   self.decoding_proc = Proc.new { |s| Base64.decode64(s).strip }
 
+  #
+  # ListSorting.sort_parameter
+  #
+  # the 'sort' part in '/users?sort=login'
+  #
+  mattr_accessor :sort_parameter
+  self.sort_parameter = :sort
+
+
+
   module Controller
     #
     # Paginate the model
@@ -52,13 +62,14 @@ module ListSorting
 
       options = options.reverse_merge(:page => params[:page] || 1)
 
-      unless (sort = params[:sort]).blank?
-        options[:order] = ListSorting.decode(sort)
-      end
+      sort = ListSorting.extract_sort_field_from params
+      options[:order] = sort if sort
 
       model.paginate options
     end
   end
+
+
 
   module Helper
     #
@@ -97,7 +108,7 @@ module ListSorting
     #
     def sort_link(label, field, options = {})
       default = options.delete(:default)
-      sort = params[:sort] ? ListSorting.decode(params[:sort]) : nil
+      sort = ListSorting.extract_sort_field_from params
       base = Proc.new { |f| f.sub(/\s*(ASC|DESC)$/,'') }
       current =
         if sort.blank?
@@ -117,9 +128,11 @@ module ListSorting
 
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
       field = ListSorting.encode(field)
-      link_to label, url_for(:sort => field), options
+      link_to label, url_for(ListSorting.sort_parameter => field), options
     end
   end
+
+
 
   class << self
     alias :encoded? :encoded
@@ -130,6 +143,10 @@ module ListSorting
 
     def decode(str)
       encoded? ? decoding_proc.call(str) : str
+    end
+
+    def extract_sort_field_from(params = {})
+      (s = params[sort_parameter]) ? decode(s) : nil
     end
   end
 end
