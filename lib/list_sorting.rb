@@ -128,7 +128,7 @@ module ListSorting
 
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
       field = ListSorting.encode(field)
-      link_to label, url_for(ListSorting.sort_parameter => field), options
+      link_to label, url_for(ListSorting.sort_parameter => field, :params => params), options
     end
   end
 
