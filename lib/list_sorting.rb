@@ -121,9 +121,9 @@ module ListSorting
         end
 
       if current
-        field = ActiveRecord::Base.__send__(:reverse_sql_order, sort).gsub(/\sASC$/i, '')
+        field = ListSorting.reverse_sql_order sort
       elsif sort.blank? and default
-        field = ActiveRecord::Base.__send__(:reverse_sql_order, field).gsub(/\sASC$/i, '')
+        field = ListSorting.reverse_sql_order field
       end
 
       options[:class] = 'current-sort ' + ((field =~ /DESC$/i) ? 'asc' : 'desc') if current
@@ -148,5 +148,21 @@ module ListSorting
     def extract_sort_field_from(params = {})
       (s = params[sort_parameter]) ? decode(s) : nil
     end
+
+    #
+    # Taken from ActiveRecord and modified (removed ASC)
+    #
+    def reverse_sql_order(order_query)
+      reversed_query = order_query.split(/,/).each { |s|
+        if s.match(/\s(asc|ASC)$/)
+          s.gsub!(/\s(asc|ASC)$/, ' DESC')
+        elsif s.match(/\s(desc|DESC)$/)
+          s.gsub!(/\s(desc|DESC)$/, '')
+        elsif !s.match(/\s(asc|ASC|desc|DESC)$/)
+          s.concat(' DESC')
+        end
+      }.join(',')
+    end
+
   end
 end
